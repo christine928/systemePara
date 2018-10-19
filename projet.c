@@ -4,8 +4,6 @@
 #include <string.h>
 #include <unistd.h>
 
-//blop la
-
 int * tri (int * B, int fn);
 void tri_merge (int ** B1, int ** B2);
 void generator( int ** B1);
