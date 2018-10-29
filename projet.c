@@ -3,6 +3,7 @@
 #include <omp.h>
 #include <string.h>
 #include <unistd.h>
+#include <time.h>
 
 typedef struct 
 {
@@ -12,9 +13,10 @@ typedef struct
 
 int * tri(int * B, int taille);
 int** tri_parallele (int ** B, int N, int K);
-DeuxTab tri_merge (int * B1, int * B2);
-void generator( int ** B1);
+DeuxTab tri_merge (int * B1, int * B2, int K);
+void generator (int ** B1, int N, int K);
 int * fusion(int * A, int tailleA, int * B, int tailleB);
+void aff (int * tab, int taille);
 
 
 int main(){
@@ -24,12 +26,25 @@ int main(){
 	int * tab2;
 	int taille=0;
 	int finCmde=0;
-	/*printf("combien de tableaux?\n");
-	scanf(" %d",&K);
+	printf("combien de tableaux?\n");
+	scanf(" %d",&N);
 	printf("quelle taille de tableaux?\n");
-	scanf(" %d", &N);*/
+	scanf(" %d", &K);
+	int ** tableau=calloc(N, sizeof(int*));
+	int i, j;
+	for(i=0; i<N; i++)
+	{
+		tableau[i]=calloc(K, sizeof(int));
+		/*for(j=0; j<K; j++)
+		{
+			printf("tab%d[%d]=? ", i, j);
+			scanf(" %d", &tableau[i][j]);
+		}*/
+	}
+	generator(tableau, N, K);
+	tri_parallele(tableau, N, K);
 	
-	// a supp apres, c est pour les tests
+/*	// a supp apres, c est pour les tests
 	printf("rentre ton tableaux séparé d'espaces (pas plus de 20 cases)\n");
 	fgets(tab, 40*sizeof(char), stdin);	
 	do
@@ -65,7 +80,7 @@ int main(){
 	for(i=0; i<taille; i++)
 	{
 		printf("tab2[%d]=%d\n", i, tab2[i]);
-	}
+	}*/
 	
 	return 0;
 }
@@ -100,15 +115,17 @@ int** tri_parallele (int ** B, int N, int K)//on a choisi le tri fusion pour sa 
 	int i, j, k, b1, b2, min, max;
 	for(i=0; i<N; i++)
 	{
-		B[i]=tri(B[i], K);	
+		printf("tab%d : \n", i);
+		aff(B[i], K);	
+		B[i]=tri(B[i], K);
 	}
-	for(j=0; j<N; j++)
+	for(j=0; j<N; j++)//commence de 0 et pas de 1
 	{
-		k=1+(j%2);
-		for(i=0; i<N/2-1; i++)
+		k=(j%2);//+1 enleve
+		for(i=0; i<N/2; i++)//commence de 0 et pas de 1, va jusque N/2 et non N/2-1
 		{
-			b1=1+(k+2*i)%N;
-			b2=1+(K+2*i+1)%N;
+			b1=(k+2*i)%N;//+1 enleve
+			b2=(k+2*i+1)%N;//K->k //+1 enleve
 			if(b1<b2)
 			{
 				min=b1;
@@ -119,10 +136,21 @@ int** tri_parallele (int ** B, int N, int K)//on a choisi le tri fusion pour sa 
 				min=b2;
 				max=b1;
 			}
-			DeuxTab tab2=tri_merge(B[min], B[max]);
+			//printf("on merge les tab %d et %d\n", min, max);
+			DeuxTab tab2=tri_merge(B[min], B[max], K);
 			B[min]=tab2.tab1;
 			B[max]=tab2.tab2;
+			//printf("j=%d, i=%d, tabMin : \n", j, i);
+			//aff(B[min], K);
+			//printf("j=%d, i=%d, tabMax : \n", j, i);
+			//aff(B[max], K);
 		}
+	}
+	printf("\n\nfinal : \n");
+	for(i=0; i<N; i++)
+	{
+		printf("tab%d : \n", i);
+		aff(B[i], K);
 	}
 	return B;
 
@@ -162,16 +190,44 @@ int * fusion(int * A, int tailleA, int * B, int tailleB)//B peut etre d'une case
 }
 		
 
-DeuxTab tri_merge (int * B1, int * B2)
+DeuxTab tri_merge (int * B1, int * B2, int K)
 {
+	int * tab=fusion(B1, K, B2, K);
+	DeuxTab retour;
+	retour.tab1=calloc(K, sizeof(int));
+	retour.tab2=calloc(K, sizeof(int));
+	memcpy(retour.tab1, tab, K*sizeof(int));
+		
+	memcpy(retour.tab2, &(tab[K]), K*sizeof(int));
 	
+	return retour;
+	
+}
+
+void generator( int ** B1, int N, int K)
+{
+	srand(time(NULL));
+	int i, j;
+	for(i=0; i<N; i++)
+	{
+		for(j=0; j<K; j++)
+		{
+			
+			B1[i][j]=random()%100;
+			//printf("tab%d[%d]=%d \n", i, j, B1[i][j]);
+		}
+	}
 	
 	
 }
 
-void generator( int ** B1)
+
+void aff (int * tab, int taille)
 {
-	
-	
-	
+	int i;
+	for(i=0; i<taille; i++)
+	{
+		printf("tab[%d]=%d\n", i, tab[i]);
+	}
+	return;
 }
