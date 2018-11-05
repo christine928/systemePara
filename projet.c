@@ -7,34 +7,34 @@
 
 typedef struct 
 {
-	int * tab1;
-	int * tab2;
+	float * tab1;
+	float * tab2;
 }DeuxTab;
 
-int * tri(int * B, int taille);
-int** tri_parallele (int ** B, int N, int K);
-DeuxTab tri_merge (int * B1, int * B2, int K);
-void generator (int ** B1, int N, int K);
-int * fusion(int * A, int tailleA, int * B, int tailleB);
-void aff (int * tab, int taille);
+float * tri(float * B, int taille);
+float** tri_parallele (float ** B, int N, int K);
+DeuxTab tri_merge (float * B1, float * B2, int K);
+void generator (float ** B1, int N, int K);
+float * fusion(float * A, int tailleA, float * B, int tailleB);
+void aff (float * tab, int taille);
 
 
 int main(){
 	int N, K;
 	char *tab=calloc(40*sizeof(char), 1);
 	//char tab[40]=" ";//calloc(40*sizeof(char), 1);
-	int * tab2;
+	float * tab2;
 	int taille=0;
 	int finCmde=0;
 	printf("combien de tableaux?\n");
 	scanf(" %d",&N);
 	printf("quelle taille de tableaux?\n");
 	scanf(" %d", &K);
-	int ** tableau=calloc(N, sizeof(int*));
+	float ** tableau=calloc(N, sizeof(float*));
 	int i, j;
 	for(i=0; i<N; i++)
 	{
-		tableau[i]=calloc(K, sizeof(int));
+		tableau[i]=calloc(K, sizeof(float));
 		/*for(j=0; j<K; j++)
 		{
 			printf("tab%d[%d]=? ", i, j);
@@ -85,23 +85,23 @@ int main(){
 	return 0;
 }
 
-int * tri(int * B, int taille)
+float * tri(float * B, int taille)
 {
 	int i;
-	int * C =malloc((taille*2)*sizeof(int));;
+	float * C =malloc((taille*2)*sizeof(float));;
 	//sleep(1);
 
 	if(taille>1)
 	{
 		//on copie dans B l'appel récursif la premiere partie du tableau
-		memcpy(B, tri(B, (taille)/2), ((taille)/2)*sizeof(int));
+		memcpy(B, tri(B, (taille)/2), ((taille)/2)*sizeof(float));
 		
 		
 		//on créé un pointeur sur la partie non traitee du tableau
 		C=&(B[(taille)/2]);
 		
 		//on copie dans la deuxieme partie du tableau l'appel récursif de cette moitie de tableau
-		memcpy(C, tri(C, (taille+1)/2), ((taille+1)/2)*sizeof(int));
+		memcpy(C, tri(C, (taille+1)/2), ((taille+1)/2)*sizeof(float));
 		
 		B=fusion(B, taille/2, C, taille-taille/2);//on fusionne les 2 tableaux en 1 seul
 		
@@ -109,7 +109,7 @@ int * tri(int * B, int taille)
 	return B;
 }
 
-int** tri_parallele (int ** B, int N, int K)//on a choisi le tri fusion pour sa complexité en temps qui est de n.logn(n), avec n la taille du tableau d'entrée
+float** tri_parallele (float ** B, int N, int K)//on a choisi le tri fusion pour sa complexité en temps qui est de n.logn(n), avec n la taille du tableau d'entrée
 {
 	//B est un tableau de tableau, N la taille de B (donc le nombre de tableaux), K la taille de chacun des tableaux
 	int i, j, k, b1, b2, min, max;
@@ -156,9 +156,9 @@ int** tri_parallele (int ** B, int N, int K)//on a choisi le tri fusion pour sa 
 
 }
 
-int * fusion(int * A, int tailleA, int * B, int tailleB)//B peut etre d'une case plus grand que A, donc il faut avoir les 2 tailles
+float * fusion(float * A, int tailleA, float * B, int tailleB)//B peut etre d'une case plus grand que A, donc il faut avoir les 2 tailles
 {
-	int * C=malloc((tailleA+tailleB)*sizeof(int));
+	float * C=malloc((tailleA+tailleB)*sizeof(float));
 	int i=0, j=0, k=0, max, min;
 	
 	
@@ -190,21 +190,21 @@ int * fusion(int * A, int tailleA, int * B, int tailleB)//B peut etre d'une case
 }
 		
 
-DeuxTab tri_merge (int * B1, int * B2, int K)
+DeuxTab tri_merge (float * B1, float * B2, int K)
 {
-	int * tab=fusion(B1, K, B2, K);
+	float * tab=fusion(B1, K, B2, K);
 	DeuxTab retour;
-	retour.tab1=calloc(K, sizeof(int));
-	retour.tab2=calloc(K, sizeof(int));
-	memcpy(retour.tab1, tab, K*sizeof(int));
+	retour.tab1=calloc(K, sizeof(float));
+	retour.tab2=calloc(K, sizeof(float));
+	memcpy(retour.tab1, tab, K*sizeof(float));
 		
-	memcpy(retour.tab2, &(tab[K]), K*sizeof(int));
+	memcpy(retour.tab2, &(tab[K]), K*sizeof(float));
 	
 	return retour;
 	
 }
 
-void generator( int ** B1, int N, int K)
+void generator( float ** B1, int N, int K)
 {
 	srand(time(NULL));
 	int i, j;
@@ -213,7 +213,7 @@ void generator( int ** B1, int N, int K)
 		for(j=0; j<K; j++)
 		{
 			
-			B1[i][j]=random()%100;
+			B1[i][j]=(random()%10000)/100.00;
 			//printf("tab%d[%d]=%d \n", i, j, B1[i][j]);
 		}
 	}
@@ -222,12 +222,12 @@ void generator( int ** B1, int N, int K)
 }
 
 
-void aff (int * tab, int taille)
+void aff (float * tab, int taille)
 {
 	int i;
 	for(i=0; i<taille; i++)
 	{
-		printf("tab[%d]=%d\n", i, tab[i]);
+		printf("tab[%d]=%.2f\n", i, tab[i]);
 	}
 	return;
 }
