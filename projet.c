@@ -18,8 +18,7 @@ void aff (float * tab, int taille);
 int main(){
 	int N, K;
 	char *tab=calloc(40*sizeof(char), 1);
-	//char tab[40]=" ";//calloc(40*sizeof(char), 1);
-	float * tab2;
+	//~ float * tab2;
 	int taille=0;
 	int finCmde=0;
 	printf("combien de tableaux?\n");
@@ -35,7 +34,7 @@ int main(){
 	}
 	generator(tableau, N, K);
 	tri_parallele(tableau, N, K);
-	printf("ca a pris %f sec\n", omp_get_wtime()-temps);
+	printf("ça a pris %f sec\n", omp_get_wtime()-temps);
 	return 0;
 }
 
@@ -64,7 +63,6 @@ float * tri(float * B, int taille)
 float** tri_parallele (float ** B, int N, int K)//on a choisi le tri fusion pour sa complexité en temps qui est de n.logn(n), avec n la taille du tableau d'entrée
 {
 	//B est un tableau de tableau, N la taille de B (donc le nombre de tableaux), K la taille de chacun des tableaux
-	//int i, j, k, min, max;
 	#pragma omp parallel for
 	for(int i=0; i<N; i++)
 	{
@@ -72,47 +70,7 @@ float** tri_parallele (float ** B, int N, int K)//on a choisi le tri fusion pour
 		aff(B[i], K);	
 		B[i]=tri(B[i], K);
 	}
-	/*for(j=0; j<N; j++)
-	{
-		k=(j%2);
-		#pragma omp parallel firstprivate( k) 
-		{
-				#pragma omp for
-				for(i=0; i<N/2; i++)
-				{
-					int b1=(k+2*i)%N;
-					int b2=(k+2*i+1)%N;
-					if(b1<b2)
-					{
-						min=b1;
-						max=b2;
-					}
-					else
-					{
-						min=b2;
-						max=b1;
-					}
-					#pragma omp critical
-					{
-						printf("99 min=%d, max=%d\n", min, max);
-						aff(B[min], K);
-						aff(B[max], K);
-						DeuxTab tab2=tri_merge(B[min], B[max], K);
-						B[min]=tab2.tab1;
-						B[max]=tab2.tab2;
-						printf("105\n");
-						aff(B[min], K);
-						aff(B[max], K);
-					}
-				}
-		}
-	}
-	printf("\n\nfinal : \n");
-	for(i=0; i<N; i++)
-	{
-		printf("tab%d : \n", i);
-		aff(B[i], K);
-	}*/
+	
 	for(int j=0; j<N; j++)
 	{
 		int k=j%2;
@@ -196,7 +154,7 @@ void generator( float ** B1, int N, int K)
 {
 	srand(time(NULL));
 	int i, j;
-	//azerty double region parallele
+	//omp_set_nested pour la double region parallele
 	omp_set_nested(1);
 	#pragma omp parallel for
 	for(i=0; i<N; i++)
