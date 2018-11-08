@@ -5,18 +5,14 @@
 #include <unistd.h>
 #include <time.h>
 
-typedef struct 
-{
-	float * tab1;
-	float * tab2;
-}DeuxTab;
 
 float * tri(float * B, int taille);
 float** tri_parallele (float ** B, int N, int K);
-DeuxTab tri_merge (float * B1, float * B2, int K);
+void tri_merge (float * B1, float * B2, int K);
 void generator (float ** B1, int N, int K);
 float * fusion(float * A, int tailleA, float * B, int tailleB);
 void aff (float * tab, int taille);
+
 
 
 int main(){
@@ -32,56 +28,14 @@ int main(){
 	scanf(" %d", &K);
 	float ** tableau=calloc(N, sizeof(float*));
 	int i, j;
+	float temps=omp_get_wtime();
 	for(i=0; i<N; i++)
 	{
 		tableau[i]=calloc(K, sizeof(float));
-		/*for(j=0; j<K; j++)
-		{
-			printf("tab%d[%d]=? ", i, j);
-			scanf(" %d", &tableau[i][j]);
-		}*/
 	}
 	generator(tableau, N, K);
 	tri_parallele(tableau, N, K);
-	
-/*	// a supp apres, c est pour les tests
-	printf("rentre ton tableaux séparé d'espaces (pas plus de 20 cases)\n");
-	fgets(tab, 40*sizeof(char), stdin);	
-	do
-	{
-		char *rep=strsep(&tab, " ");
-		if(rep!=NULL)
-		{
-			if((strcmp(rep, "\n")!=0)&&(strcmp(rep, "")!=0))//si il y avait plusieurs espaces a la suite, on ne les garde pas
-			{
-				int i;
-				taille++;
-				if(taille==1)//donc à 0 avant incrementation
-				{
-					tab2=malloc(sizeof(int));
-					tab2[0]=atoi(rep);
-				}
-				else
-				{
-					tab2=realloc(tab2, taille*sizeof(int));
-					tab2[taille-1]=atoi(rep);
-				}
-			}
-		}
-		else
-		{
-			finCmde=1;
-		}
-
-	}while(finCmde==0);
-	//int tab[7]={6, 5, 8, 1, 7, 3, 0};
-	tab2=tri(tab2, taille);
-	int i;
-	for(i=0; i<taille; i++)
-	{
-		printf("tab2[%d]=%d\n", i, tab2[i]);
-	}*/
-	
+	printf("ca a pris %f sec\n", omp_get_wtime()-temps);
 	return 0;
 }
 
@@ -89,13 +43,11 @@ float * tri(float * B, int taille)
 {
 	int i;
 	float * C =malloc((taille*2)*sizeof(float));;
-	//sleep(1);
 
 	if(taille>1)
 	{
 		//on copie dans B l'appel récursif la premiere partie du tableau
 		memcpy(B, tri(B, (taille)/2), ((taille)/2)*sizeof(float));
-		
 		
 		//on créé un pointeur sur la partie non traitee du tableau
 		C=&(B[(taille)/2]);
@@ -112,20 +64,64 @@ float * tri(float * B, int taille)
 float** tri_parallele (float ** B, int N, int K)//on a choisi le tri fusion pour sa complexité en temps qui est de n.logn(n), avec n la taille du tableau d'entrée
 {
 	//B est un tableau de tableau, N la taille de B (donc le nombre de tableaux), K la taille de chacun des tableaux
-	int i, j, k, b1, b2, min, max;
-	for(i=0; i<N; i++)
+	//int i, j, k, min, max;
+	#pragma omp parallel for
+	for(int i=0; i<N; i++)
 	{
 		printf("tab%d : \n", i);
 		aff(B[i], K);	
 		B[i]=tri(B[i], K);
 	}
-	for(j=0; j<N; j++)//commence de 0 et pas de 1
+	/*for(j=0; j<N; j++)
 	{
-		k=(j%2);//+1 enleve
-		for(i=0; i<N/2; i++)//commence de 0 et pas de 1, va jusque N/2 et non N/2-1
+		k=(j%2);
+		#pragma omp parallel firstprivate( k) 
 		{
-			b1=(k+2*i)%N;//+1 enleve
-			b2=(k+2*i+1)%N;//K->k //+1 enleve
+				#pragma omp for
+				for(i=0; i<N/2; i++)
+				{
+					int b1=(k+2*i)%N;
+					int b2=(k+2*i+1)%N;
+					if(b1<b2)
+					{
+						min=b1;
+						max=b2;
+					}
+					else
+					{
+						min=b2;
+						max=b1;
+					}
+					#pragma omp critical
+					{
+						printf("99 min=%d, max=%d\n", min, max);
+						aff(B[min], K);
+						aff(B[max], K);
+						DeuxTab tab2=tri_merge(B[min], B[max], K);
+						B[min]=tab2.tab1;
+						B[max]=tab2.tab2;
+						printf("105\n");
+						aff(B[min], K);
+						aff(B[max], K);
+					}
+				}
+		}
+	}
+	printf("\n\nfinal : \n");
+	for(i=0; i<N; i++)
+	{
+		printf("tab%d : \n", i);
+		aff(B[i], K);
+	}*/
+	for(int j=0; j<N; j++)
+	{
+		int k=j%2;
+		#pragma omp parallel for
+		for(int i =0; i<N/2; i++)
+		{
+			int b1=(k+2*i)%N;
+			int b2=(k+2*i+1)%N;
+			int min, max;
 			if(b1<b2)
 			{
 				min=b1;
@@ -136,25 +132,20 @@ float** tri_parallele (float ** B, int N, int K)//on a choisi le tri fusion pour
 				min=b2;
 				max=b1;
 			}
-			//printf("on merge les tab %d et %d\n", min, max);
-			DeuxTab tab2=tri_merge(B[min], B[max], K);
-			B[min]=tab2.tab1;
-			B[max]=tab2.tab2;
-			//printf("j=%d, i=%d, tabMin : \n", j, i);
-			//aff(B[min], K);
-			//printf("j=%d, i=%d, tabMax : \n", j, i);
-			//aff(B[max], K);
+			tri_merge(B[min], B[max], K);	
 		}
 	}
 	printf("\n\nfinal : \n");
-	for(i=0; i<N; i++)
+	for(int i=0; i<N; i++)
 	{
 		printf("tab%d : \n", i);
 		aff(B[i], K);
 	}
+
 	return B;
 
 }
+
 
 float * fusion(float * A, int tailleA, float * B, int tailleB)//B peut etre d'une case plus grand que A, donc il faut avoir les 2 tailles
 {
@@ -190,17 +181,14 @@ float * fusion(float * A, int tailleA, float * B, int tailleB)//B peut etre d'un
 }
 		
 
-DeuxTab tri_merge (float * B1, float * B2, int K)
+void tri_merge (float * B1, float * B2, int K)
 {
 	float * tab=fusion(B1, K, B2, K);
-	DeuxTab retour;
-	retour.tab1=calloc(K, sizeof(float));
-	retour.tab2=calloc(K, sizeof(float));
-	memcpy(retour.tab1, tab, K*sizeof(float));
-		
-	memcpy(retour.tab2, &(tab[K]), K*sizeof(float));
 	
-	return retour;
+	memcpy(B1, tab, K*sizeof(float));
+	memcpy(B2, &(tab[K]), K*sizeof(float));
+	
+	return ;
 	
 }
 
@@ -208,19 +196,20 @@ void generator( float ** B1, int N, int K)
 {
 	srand(time(NULL));
 	int i, j;
+	//azerty double region parallele
+	omp_set_nested(1);
+	#pragma omp parallel for
 	for(i=0; i<N; i++)
 	{
+		#pragma omp parallel for
 		for(j=0; j<K; j++)
-		{
-			
+		{			
 			B1[i][j]=(random()%10000)/100.00;
-			//printf("tab%d[%d]=%d \n", i, j, B1[i][j]);
 		}
 	}
 	
 	
 }
-
 
 void aff (float * tab, int taille)
 {
